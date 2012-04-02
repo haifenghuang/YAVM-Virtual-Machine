@@ -20,7 +20,7 @@ typedef enum
 }OPCODES;
 
 
-int vm_init(int stackSz,int localsSz);
+int vm_init(void);
 int vm_run(int * program);
 int vm_shutDown();
 

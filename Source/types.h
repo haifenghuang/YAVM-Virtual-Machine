@@ -13,7 +13,7 @@ typedef enum
 const char * typeStrings[];
 
 
-typedef double Number;
+typedef int Number;
 typedef struct {char * string; int length;}String;
 typedef enum {TRUE = 1, FALSE = 0 } Boolean;
 
@@ -24,7 +24,6 @@ typedef union
 	Number n;
 	String * s;
 	Boolean b;
-
 }Value;
 
 typedef struct 

@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include "vmDebug.h"
 
-#define OPNUM 13
-
 const opInfo opArgs[]  = {
 	      //indexA  indexB  indexC
 	{"ADD", T_NUM,  T_NUM,  T_NUM,  3 },

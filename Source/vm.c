@@ -7,7 +7,7 @@
 
 #define EPSILON 0.000001
 
-//Math operations, operates off local variables only, TODO: Change it maybe
+//Math operations
 
 static void add(void);
 static void sub(void);
@@ -48,8 +48,10 @@ OPCODE opTable[] = {
 static int * program;
 
 //registers 
-static Object * reg;
-
+static Object reg[32] = {
+	{T_NUM, {{1234}}},
+	{T_NUM, {{4321}}}
+	};
 
 // program counter
 static int * pc;
@@ -61,27 +63,27 @@ static int indexC;
 static int indexD;
 
 
-int vm_init(int stackSz,int regSz)
+int vm_init(void)
 {
-
-	reg = (Object*)malloc(sizeof(Object) * regSz);
-
-	if(reg == NULL)
-		return -1;
-
+	
 	return 0;
-
 }
+
 int vm_run(int * a_program)
 {
-	if(reg == NULL)
-		return 1;
+
 	if(a_program == NULL)
 		return 2;
 
 	program = a_program;
 	pc = program;
 
+	// <Temporary>
+
+	
+	
+
+	// </Temporary>
 
 	for(;;){
 		decode();
@@ -93,7 +95,9 @@ int vm_run(int * a_program)
 			system("pause");
 			break;
 		}
-	
+		
+		
+		
 		opTable[opType]();
 		
 	}
@@ -110,7 +114,7 @@ static void add(void)
 {
 	//add takes two values from designated registers and places result in another register
 	
-	reg[indexC].value.n = reg[indexA].value.n + reg[indexB].value.n;
+	reg[indexA].value.n = reg[indexB].value.n + reg[indexC].value.n;
 	return;
 }
 
@@ -118,7 +122,7 @@ static void sub(void)
 {
 	//sub takes two values from designated registers and places result in another register
 
-	reg[indexC].value.n = reg[indexA].value.n - reg[indexB].value.n;
+	reg[indexA].value.n = reg[indexB].value.n - reg[indexC].value.n;
 	return;
 }
 
@@ -126,7 +130,7 @@ static void mul(void)
 {
 	//mul takes two values from designated registers and places result in another register
 
-	reg[indexC].value.n = reg[indexA].value.n * reg[indexB].value.n;
+	reg[indexA].value.n = reg[indexB].value.n * reg[indexC].value.n;
 	return;
 }
 
@@ -134,7 +138,7 @@ static void dvd(void)
 {
 	//dvd takes two values from designated registers and places result in another register
 
-	reg[indexC].value.n = reg[indexA].value.n / reg[indexB].value.n;
+	reg[indexA].value.n = reg[indexB].value.n / reg[indexC].value.n;
 	return;
 }
 
@@ -143,7 +147,7 @@ static void mod(void)
 	//mod takes two values from designated registers, casts them to int since they could be doubles, mods them 
 	//and then places the result in another register
 
-	reg[indexC].value.n = (int)reg[indexA].value.n % (int)reg[indexB].value.n;
+	reg[indexA].value.n = (int)reg[indexB].value.n % (int)reg[indexC].value.n;
 	return;
 }
 
@@ -151,7 +155,7 @@ static void sqt(void)
 {
 	//sqt takes a value from the top of the stack takes the sqrt and places result back on top
 	
-	reg[indexC].value.n = sqrt(reg[indexA].value.n);
+	reg[indexA].value.n = sqrt(reg[indexB].value.n);
 	return;
 }
 
@@ -159,7 +163,7 @@ static void pwr(void)
 {
 	//pwr raises indexA to indexB and places the result on top of stack
 	
-	reg[indexC].value.n = pow(reg[indexA].value.n, reg[indexB].value.n);
+	reg[indexA].value.n = pow(reg[indexB].value.n, reg[indexC].value.n);
 	return;
 }
 
@@ -216,7 +220,6 @@ static void decode(void)
 {
 	//decode opcode into respective parts such as indexes for data etc.
 
-	pc++;
 
 	opType = *pc & 0x000000FF;
 
@@ -232,6 +235,8 @@ static void decode(void)
 		checkType(opType, reg[indexA].type, reg[indexB].type, T_NONE);
 	else if (opArgs[opType].check == 1)
 		checkType(opType, reg[indexA].type, T_NONE, T_NONE);
+	
+	pc++;
 	                                               
 }
 

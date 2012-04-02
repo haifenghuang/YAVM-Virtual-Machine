@@ -7,14 +7,17 @@
 
 
 int program[]  = {
-	0x00000000,
+	0x00010007,
+	0x01000000,
 	DIE
 };
 
 int main(int argc, char *argv[])
 {
-	vm_init(32, 32);
-	printf(getDebugInfo(vm_run(NULL)));
+
+
+	vm_init();
+	printf(getDebugInfo(vm_run(program)));
 	vm_shutDown();
 	return 0;
 }
