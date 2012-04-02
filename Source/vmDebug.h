@@ -6,7 +6,7 @@
 typedef struct
 {
 	char * opName;
-	int arg1, arg2;
+	Type arg1, arg2, arg3;
 	int check; // how many arguments need to be verified eg. SQT only takes 1 argument so check for it is 1
 }opInfo;
 

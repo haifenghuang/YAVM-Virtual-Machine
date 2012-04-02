@@ -5,9 +5,10 @@
 #include "vmDebug.h"
 #include "vm.h"
 
+#define EPSILON 0.000001
+
 //Math operations, operates off local variables only, TODO: Change it maybe
-static void push(void);
-static void pop(void);
+
 static void add(void);
 static void sub(void);
 static void mul(void);
@@ -18,47 +19,21 @@ static void pwr(void);
 
 //Logical operations
 static void cmp(void);
-static void jne(void);
-static void jie(void);
+static void lt(void);
+static void lte(void);
 static void jmp(void);
 static void mov(void);
 
 
-static void flsh(void);
 static void decode(void);
 
 
+static int checkType(int opType, int arg1, int arg2, int arg3);
 
-static int checkType(int opType, int arg1, int arg2);
-
-typedef enum
-{
-	//math
-	PUSH,
-	POP,
-	ADD,
-	SUB,
-	MUL,
-	DVD,
-	MOD,
-	SQT,
-	PWR,
-	//logic not really
-	CMP,
-	JNE,
-	JIE,
-	JMP,
-	//control codes
-	FLSH,
-	MOV,
-	DIE = 255
-}OPCODES;
 
 
 
 OPCODE opTable[] = {
-	&push,
-	&pop,
 	&add,
 	&sub,
 	&mul,
@@ -67,38 +42,30 @@ OPCODE opTable[] = {
 	&sqt,
 	&pwr,
 	&cmp,
-	&jne,
-	&jie,
+	&lt,
+	&lte,
 	&jmp,
-	&flsh,
 	&mov
 };
 
 static int * program;
-//stack of "number" that is used for data manpculation 
-static Object * stack;
+
 //variables declared in .data
 static Object * heap;
 
 
 // program counter
 static int * pc;
-// Stack Pointer
-static Object * sp;
 
 static int opType;
 static int indexA;
 static int indexB;
 static int indexC;
+static int indexD;
 
 
 int vm_init(int stackSz,int heapSz)
 {
-	stack = (Object*)malloc(sizeof(Object) * stackSz);
-	sp = stack;
-
-	if(stack == NULL)
-		return -1;
 
 	heap = (Object*)malloc(sizeof(Object) * heapSz);
 
@@ -110,7 +77,7 @@ int vm_init(int stackSz,int heapSz)
 }
 int vm_run(int * a_program)
 {
-	if(heap == NULL || stack == NULL)
+	if(heap == NULL)
 		return 1;
 	if(a_program == NULL)
 		return 2;
@@ -130,15 +97,7 @@ int vm_run(int * a_program)
 			break;
 		}
 	
-		
 		opTable[opType]();
-
-		if(abs(sp-stack)> 31)
-		{
-			printf("Error:\n    stack overflow,\n    last operation %s\n",opArgs[opType].opName);
-			system("pause");
-			exit(-1);
-		}
 		
 	}
 	return 0;
@@ -146,33 +105,15 @@ int vm_run(int * a_program)
 
 int vm_shutDown()
 {
-	free(stack);
 	free(heap);
-
 }
 
-
-static void push(void)
-{
-	//pushes indexA to stack
-	*++sp = heap[indexA];
-	return;
-}
-
-static void pop(void)
-{
-	//pops the last value off the stack into indexA
-	heap[indexA] = *sp--;
-	return;
-}
 
 static void add(void)
 {
 	//add takes two numbers from top of stack adds them and places result on top of the stack
 	
-	(++sp)->value.n = heap[indexA].value.n + heap[indexB].value.n;
-	sp->type = T_NUM;
-	
+	heap[indexC].value.n = heap[indexA].value.n + heap[indexB].value.n;
 	return;
 }
 
@@ -180,8 +121,7 @@ static void sub(void)
 {
 	//sub takes two values from accumulator subs them and places the result on the top of the stack
 
-	(++sp)->value.n = heap[indexA].value.n - heap[indexB].value.n;
-	sp->type = T_NUM;
+	heap[indexC].value.n = heap[indexA].value.n - heap[indexB].value.n;
 	return;
 }
 
@@ -189,8 +129,7 @@ static void mul(void)
 {
 	//mul takes two values from accumulator multpclies them and places the result on the top of the stack
 
-	(++sp)->value.n = heap[indexA].value.n * heap[indexB].value.n;
-	sp->type = T_NUM;
+	heap[indexC].value.n = heap[indexA].value.n * heap[indexB].value.n;
 	return;
 }
 
@@ -198,8 +137,7 @@ static void dvd(void)
 {
 	//dvd takes two values from accumulator divides them and places the result on the top of the stack
 
-	(++sp)->value.n = heap[indexA].value.n / heap[indexB].value.n;
-	sp->type = T_NUM;	
+	heap[indexC].value.n = heap[indexA].value.n / heap[indexB].value.n;
 	return;
 }
 
@@ -208,8 +146,7 @@ static void mod(void)
 	//mod takes two values from accumulator, casts them to int since they could be doubles, mods them 
 	//and then places the result on the top of the stack
 
-	(++sp)->value.n = (int)heap[indexA].value.n % (int)heap[indexB].value.n;
-	sp->type = T_NUM;
+	heap[indexC].value.n = (int)heap[indexA].value.n % (int)heap[indexB].value.n;
 	return;
 }
 
@@ -217,8 +154,7 @@ static void sqt(void)
 {
 	//sqt takes a value from the top of the stack takes the sqrt and places result back on top
 	
-	(++sp)->value.n = sqrt(heap[indexA].value.n);
-	sp->type = T_NUM;
+	heap[indexC].value.n = sqrt(heap[indexA].value.n);
 	return;
 }
 
@@ -226,72 +162,52 @@ static void pwr(void)
 {
 	//pwr raises indexA to indexB and places the result on top of stack
 	
-	(++sp)->value.n = pow(heap[indexA].value.n, heap[indexB].value.n);
-	sp->type = T_NUM;
+	heap[indexC].value.n = pow(heap[indexA].value.n, heap[indexB].value.n);
 	return;
 }
 
 static void cmp(void)//todo possibly make a register for this just to seperate the crap
 {
 	//TODO: possibly change this to just int's
-	if(&heap[indexA] == &heap[indexB]){
-		(++sp)->value.b = TRUE;
-		sp->type = T_BLN;
+	if(&heap[indexA] == &heap[indexB])
 		return;
-	}
 
 	if(heap[indexA].type == heap[indexB].type)
 	{
-	    ++sp;
-		sp->type = T_BLN;
-
 		switch(heap[indexA].type)
 		{
 		case T_NUM:
-			sp->value.b = (abs(heap[indexA].value.n - heap[indexB].value.n) < 0.00001) ? TRUE : FALSE;
+			pc += (abs(heap[indexA].value.n - heap[indexB].value.n) < EPSILON) ? 0 : 1;
 			break;
 		case T_BLN:
-			sp->value.b = (heap[indexA].value.b == heap[indexB].value.b) ? TRUE : FALSE;
+			pc += (heap[indexA].value.b == heap[indexB].value.b) ? 0 : 1;
 			break;
 		case T_STR:
 			if(heap[indexA].value.s->length <= 0)
-			{
-				sp->value.b = FALSE;
 				break;
-			}
-			sp->value.b = strncmp(heap[indexA].value.s->string, heap[indexB].value.s->string, heap[indexA].value.s->length) ? FALSE : TRUE;
+			pc += strncmp(heap[indexA].value.s->string, heap[indexB].value.s->string, heap[indexA].value.s->length) ? 0 : 1;
 			break;
 		}
 	}
-			
-	sp->type = T_BLN;
 	return;
 }
 
-static void jne(void)//consumes item on top of stack
+
+static void lt(void)
 {
-	
-	if((sp--)->value.b == FALSE)
-		pc = program + indexC;
-	return;
+	pc += (heap[indexA].value.n < heap[indexB].value.n) && (fabs(heap[indexA].value.n - heap[indexB].value.n) > EPSILON) ? 0 : 1;
 }
 
-static void jie(void)//consumes item on top of stack to check if true and uses indexC as jump address
+static void lte(void)
 {
-	
-	if((sp--)->value.b == TRUE)
-		pc = program + indexC;
-	return;
+	if(&heap[indexA] == &heap[indexB])
+		return;
+	pc += (heap[indexA].value.n < heap[indexB].value.n) || (fabs(heap[indexA].value.n - heap[indexB].value.n) < EPSILON) ? 0 : 1;
 }
 
 static void jmp(void)
 {
-	pc = program + indexC;
-}
-
-static void flsh(void)
-{
-	sp = stack;
+	pc = program + indexD;
 }
 
 static void mov(void)
@@ -301,30 +217,34 @@ static void mov(void)
 
 static void decode(void)
 {
-
 	//decode opcode into respective parts such as indexes for data etc.
-	
+
 	int instruction = *pc++;
 
 	opType = instruction & 0x000000FF;
 
-	indexA = (instruction >> 8 ) & 0x000000FF;
-	indexB = (instruction >> 16) & 0x000000FF;
-	indexC = (instruction >> 8);
+	indexA = (instruction >> 8 ) & 0xFF;
+	indexB = (instruction >> 16) & 0xFF;
+	indexC = (instruction >> 24) & 0xFF;
+	indexD = (instruction >> 8);
 	
-	if( opArgs[opType].check == 2 )
-		checkType(opType, heap[indexA].type, heap[indexB].type);
+	//TODO: possibly convert to inline
+	if( opArgs[opType].check == 3 )
+		checkType(opType, heap[indexC].type, heap[indexA].type, heap[indexB].type);
+	else if (opArgs[opType].check == 2)
+		checkType(opType, heap[indexA].type, heap[indexB].type, T_NONE);
 	else if (opArgs[opType].check == 1)
-		checkType(opType, T_NONE, heap[indexA].type);
+		checkType(opType, heap[indexA].type, T_NONE, T_NONE);
 	                                               
 }
 
-static int checkType(int opType, int arg1, int arg2)
+static int checkType(int opType, Type arg1, Type arg2, Type arg3)
 {
-	if(opArgs[opType].arg1 != arg1 || opArgs[opType].arg2 != arg2)
+	if(opArgs[opType].arg1 != arg1 || opArgs[opType].arg2 != arg2 || opArgs[opType].arg3 != arg3)
 	{
-		printf("Type Error:\n    %s expected arguments of type %s and %s,\n    got %s and %s instead",
-			opArgs[opType].opName, typeStrings[opArgs[opType].arg1], typeStrings[opArgs[opType].arg2], typeStrings[arg1], typeStrings[arg2]);
+		printf("Type Error:\n    %s expected arguments of type %s, %s and %s,\n    got %s and %s instead", opArgs[opType].opName, 
+			typeStrings[opArgs[opType].arg1], typeStrings[opArgs[opType].arg2], typeStrings[opArgs[opType].arg3],
+			typeStrings[arg1], typeStrings[arg2], typeStrings[arg3]);
 		return -1;
 	}
 

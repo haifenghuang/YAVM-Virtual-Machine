@@ -4,20 +4,18 @@
 #define OPNUM 13
 
 const opInfo opArgs[]  = {
-	{"PUSH",T_NONE, T_OBJ, 0 }, // PUSH requires object type
-	{"POP", T_NONE, T_OBJ, 0 }, // POP requires object type
-	{"ADD", T_NUM,  T_NUM, 2 },
-	{"SUB", T_NUM,  T_NUM, 2 },
-	{"MUL", T_NUM,  T_NUM, 2 },
-	{"DVD", T_NUM,  T_NUM, 2 },
-	{"MOD", T_NUM,  T_NUM, 2 },
-	{"SQT", T_NONE, T_NUM, 1 },
-	{"PWR", T_NUM,  T_NUM, 2 },
-	{"CMP", T_OBJ,  T_OBJ, 0 },
-	{"JNE", T_NONE, T_NONE, 0 }, //jne takes no arguments
-	{"JIE", T_NONE, T_NONE, 0 }, //jie takes no arguments
-	{"JMP", T_NONE, T_NONE, 0 }, //jmp takes no arguments
-	{"FLSH",T_NONE, T_NONE, 0 }, //flsh takes no arguments
+	      //indexA  indexB  indexC
+	{"ADD", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"SUB", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"MUL", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"DVD", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"MOD", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"SQT", T_NUM,  T_NUM,  T_NONE, 3 },
+	{"PWR", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"CMP", T_NONE, T_NONE, T_NONE, 0 },
+	{"LT",  T_NUM,  T_NUM,  T_NONE, 2 }, //jne takes no arguments
+	{"LTE", T_NUM, T_NUM,   T_NONE, 2 }, //jie takes no arguments
+	{"JMP", T_NONE, T_NONE, T_NONE, 0 }, //jmp takes no arguments
  };
 
 

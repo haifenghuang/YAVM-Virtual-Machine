@@ -5,6 +5,12 @@
 #include "vm.h"
 #include "vmDebug.h"
 
+
+int program[]  = {
+	0x00000000,
+	DIE
+};
+
 int main(int argc, char *argv[])
 {
 	vm_init(32, 32);
