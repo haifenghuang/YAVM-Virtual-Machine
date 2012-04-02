@@ -84,6 +84,15 @@ next_opcode:
 
 	decode();
 
+	//TODO: possibly convert to inline
+	if( opArgs[opType].check == 3 )
+		checkType(opType, reg[indexC].type, reg[indexA].type, reg[indexB].type);
+	else if (opArgs[opType].check == 2)
+		checkType(opType, reg[indexA].type, reg[indexB].type, T_NONE);
+	else if (opArgs[opType].check == 1)
+		checkType(opType, reg[indexA].type, T_NONE, T_NONE);
+	
+	++pc;
 
 	if(opType == (DIE))
 	{
@@ -173,24 +182,13 @@ op_mov:
 static void decode(void)
 {
 	//decode opcode into respective parts such as indexes for data etc.
-
-
-	opType = *pc & 0x000000FF;
+	opType = (OPCODE)(*pc & 0x000000FF); // cast just to get visual c++ to shutup
 
 	indexA = (*pc >> 8 ) & 0xFF;
 	indexB = (*pc >> 16) & 0xFF;
 	indexC = (*pc >> 24) & 0xFF;
 	indexD = (*pc >> 8);
-	
-	//TODO: possibly convert to inline
-	if( opArgs[opType].check == 3 )
-		checkType(opType, reg[indexC].type, reg[indexA].type, reg[indexB].type);
-	else if (opArgs[opType].check == 2)
-		checkType(opType, reg[indexA].type, reg[indexB].type, T_NONE);
-	else if (opArgs[opType].check == 1)
-		checkType(opType, reg[indexA].type, T_NONE, T_NONE);
-	
-	pc++;                                              
+                                         
 }
 
 static int checkType(int opType, Type arg1, Type arg2, Type arg3)
