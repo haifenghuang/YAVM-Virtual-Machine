@@ -30,13 +30,6 @@ static int indexB;
 static int indexC;
 static int indexD;
 
-
-int vm_init(void)
-{
-
-	return 0;
-}
-
 int vm_run(int * a_program)
 {
 	static void * opTable[12];
@@ -137,7 +130,7 @@ op_pow:
 
 op_cmp:
 	if(&reg[indexA] == &reg[indexB])
-		return;
+		goto next_opcode;
 
 	if(reg[indexA].type == reg[indexB].type)
 	{
@@ -164,7 +157,7 @@ op_lt:
 
 op_lte:
 	if(&reg[indexA] == &reg[indexB])
-		return;
+		goto next_opcode;
 	pc += (reg[indexA].value.n < reg[indexB].value.n) || (fabs(reg[indexA].value.n - reg[indexB].value.n) < EPSILON) ? 0 : 1;
 	goto next_opcode;
 
@@ -175,10 +168,6 @@ op_jmp:
 op_mov:
 	reg[indexA] = reg[indexB];	
 	goto next_opcode;
-}
-
-int vm_shutDown()
-{
 }
 
 static void decode(void)
