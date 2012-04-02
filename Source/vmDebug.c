@@ -6,10 +6,10 @@ const opInfo opArgs[]  = {
 	{"ADD", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"SUB", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"MUL", T_NUM,  T_NUM,  T_NUM,  3 },
-	{"DVD", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"DIV", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"MOD", T_NUM,  T_NUM,  T_NUM,  3 },
-	{"SQT", T_NUM,  T_NUM,  T_NONE, 3 },
-	{"PWR", T_NUM,  T_NUM,  T_NUM,  3 },
+	{"SQRT", T_NUM,  T_NUM,  T_NONE, 3 },
+	{"POW", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"CMP", T_NONE, T_NONE, T_NONE, 0 },
 	{"LT",  T_NUM,  T_NUM,  T_NONE, 2 }, //jne takes no arguments
 	{"LTE", T_NUM, T_NUM,   T_NONE, 2 }, //jie takes no arguments

@@ -12,12 +12,11 @@ typedef enum
 
 const char * typeStrings[];
 
-
 typedef int Number;
-typedef struct {char * string; int length;}String;
+
 typedef enum {TRUE = 1, FALSE = 0 } Boolean;
 
-typedef void (*OPCODE)(void);
+typedef struct {char * string; int length;}String;
 
 typedef union 
 {

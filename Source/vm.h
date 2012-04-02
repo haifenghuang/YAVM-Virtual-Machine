@@ -4,20 +4,20 @@
 
 typedef enum
 {
-	ADD,
-	SUB,
-	MUL,
-	DVD,
-	MOD,
-	SQT,
-	PWR,
-	CMP,
-	LT,
-	LTE,
-	JMP,
-	MOV,
+	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_MOD,
+	OP_SQRT,
+	OP_POW,
+	OP_CMP,
+	OP_LT,
+	OP_LTE,
+	OP_JMP,
+	OP_MOV,
 	DIE = 255
-}OPCODES;
+}OPCODE;
 
 
 int vm_init(void);

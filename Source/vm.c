@@ -30,33 +30,19 @@ static void decode(void);
 
 static int checkType(int opType, int arg1, int arg2, int arg3);
 
-OPCODE opTable[] = {
-	&add,
-	&sub,
-	&mul,
-	&dvd,
-	&mod,
-	&sqt,
-	&pwr,
-	&cmp,
-	&lt,
-	&lte,
-	&jmp,
-	&mov
-};
-
 static int * program;
 
 //registers 
 static Object reg[32] = {
+	{T_NUM, {{10}}},
 	{T_NUM, {{1234}}},
-	{T_NUM, {{4321}}}
+	{T_NUM, {{30}}}
 	};
 
 // program counter
 static int * pc;
 
-static int opType;
+static OPCODE opType;
 static int indexA;
 static int indexB;
 static int indexC;
@@ -65,12 +51,13 @@ static int indexD;
 
 int vm_init(void)
 {
-	
+
 	return 0;
 }
 
 int vm_run(int * a_program)
 {
+	static void * opTable[12];
 
 	if(a_program == NULL)
 		return 2;
@@ -78,98 +65,97 @@ int vm_run(int * a_program)
 	program = a_program;
 	pc = program;
 
-	// <Temporary>
-
 	
-	
-
-	// </Temporary>
-
-	for(;;){
-		decode();
-
-
-		if(opType == (DIE))
-		{
-			printf("dying...\n");
-			system("pause");
-			break;
-		}
+	__asm 
+	{
+		mov eax, op_add;
+		mov [opTable + OP_ADD*4], eax;
 		
+		mov eax, op_sub;
+		mov [opTable + OP_SUB*4], eax;
 		
-		
-		opTable[opType]();
-		
+		mov eax, op_mul;
+		mov [opTable + OP_MUL*4], eax;
+
+		mov eax, op_div;
+		mov [opTable + OP_DIV*4], eax;
+
+		mov eax, op_mod;
+		mov [opTable + OP_MOD*4], eax;
+
+		mov eax, op_sqrt;
+		mov [opTable + OP_SQRT*4], eax;
+
+		mov eax, op_pow;
+		mov [opTable + OP_POW*4], eax;
+
+		mov eax, op_cmp;
+		mov [opTable + OP_CMP*4], eax;
+
+		mov eax, op_lt;
+		mov [opTable + OP_LT*4], eax;
+
+		mov eax, op_lte;
+		mov [opTable + OP_LTE*4], eax;
+
+		mov eax, op_jmp;
+		mov [opTable + OP_JMP*4], eax;
+
+		mov eax, op_mov;
+		mov [opTable + OP_MOV*4], eax;
+
 	}
-	return 0;
-}
-
-int vm_shutDown()
-{
-	free(reg);
-}
 
 
-static void add(void)
-{
-	//add takes two values from designated registers and places result in another register
+next_opcode:
+
+	decode();
+
+
+	if(opType == (DIE))
+	{
+		printf("dying...\n");
+		system("pause");
+		
+		return 0;
+	}
 	
+	_asm
+	{
+		mov eax, opType;
+		mov eax, [opTable + eax*4];
+		jmp eax;
+	}
+
+op_add:
 	reg[indexA].value.n = reg[indexB].value.n + reg[indexC].value.n;
-	return;
-}
+	goto next_opcode;
 
-static void sub(void)
-{
-	//sub takes two values from designated registers and places result in another register
-
+op_sub:
 	reg[indexA].value.n = reg[indexB].value.n - reg[indexC].value.n;
-	return;
-}
+	goto next_opcode;
 
-static void mul(void)
-{
-	//mul takes two values from designated registers and places result in another register
-
+op_mul:
 	reg[indexA].value.n = reg[indexB].value.n * reg[indexC].value.n;
-	return;
-}
+	goto next_opcode;
 
-static void dvd(void)
-{
-	//dvd takes two values from designated registers and places result in another register
-
+op_div:
 	reg[indexA].value.n = reg[indexB].value.n / reg[indexC].value.n;
-	return;
-}
+	goto next_opcode;
 
-static void mod(void)
-{
-	//mod takes two values from designated registers, casts them to int since they could be doubles, mods them 
-	//and then places the result in another register
-
+op_mod:
 	reg[indexA].value.n = (int)reg[indexB].value.n % (int)reg[indexC].value.n;
-	return;
-}
+	goto next_opcode;
 
-static void sqt(void)
-{
-	//sqt takes a value from the top of the stack takes the sqrt and places result back on top
-	
+op_sqrt:
 	reg[indexA].value.n = sqrt(reg[indexB].value.n);
-	return;
-}
+	goto next_opcode;
 
-static void pwr(void)
-{
-	//pwr raises indexA to indexB and places the result on top of stack
-	
+op_pow:
 	reg[indexA].value.n = pow(reg[indexB].value.n, reg[indexC].value.n);
-	return;
-}
+	goto next_opcode;
 
-static void cmp(void)//todo possibly make a register for this just to seperate the crap
-{
-	//TODO: possibly change this to just int's
+op_cmp:
 	if(&reg[indexA] == &reg[indexB])
 		return;
 
@@ -190,31 +176,42 @@ static void cmp(void)//todo possibly make a register for this just to seperate t
 			break;
 		}
 	}
-	return;
-}
+	goto next_opcode;
 
-
-static void lt(void)
-{
+op_lt:
 	pc += (reg[indexA].value.n < reg[indexB].value.n) && (fabs(reg[indexA].value.n - reg[indexB].value.n) > EPSILON) ? 0 : 1;
-}
+	goto next_opcode;
 
-static void lte(void)
-{
+op_lte:
 	if(&reg[indexA] == &reg[indexB])
 		return;
 	pc += (reg[indexA].value.n < reg[indexB].value.n) || (fabs(reg[indexA].value.n - reg[indexB].value.n) < EPSILON) ? 0 : 1;
-}
+	goto next_opcode;
 
-static void jmp(void)
-{
+op_jmp:
 	pc = program + indexD;
+	goto next_opcode;
+
+op_mov:
+	reg[indexA] = reg[indexB];	
+	goto next_opcode;
+		
 }
 
-static void mov(void)
+int vm_shutDown()
 {
-	reg[indexA] = reg[indexB];	
 }
+
+
+
+
+
+
+
+
+
+
+
 
 static void decode(void)
 {
