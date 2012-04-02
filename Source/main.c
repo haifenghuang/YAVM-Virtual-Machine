@@ -15,7 +15,5 @@ int program[]  = {
 
 int main(int argc, char *argv[])
 {
-	vm_init();
 	vm_run(program);
-	vm_shutDown();
 }

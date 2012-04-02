@@ -7,24 +7,6 @@
 
 #define EPSILON 0.000001
 
-//Math operations
-
-static void add(void);
-static void sub(void);
-static void mul(void);
-static void dvd(void);
-static void mod(void);
-static void sqt(void);
-static void pwr(void);
-
-//Logical operations
-static void cmp(void);
-static void lt(void);
-static void lte(void);
-static void jmp(void);
-
-//memory
-static void mov(void);
 
 static void decode(void);
 
@@ -65,7 +47,6 @@ int vm_run(int * a_program)
 	program = a_program;
 	pc = program;
 
-	
 	__asm 
 	{
 		mov eax, op_add;
@@ -105,7 +86,6 @@ int vm_run(int * a_program)
 		mov [opTable + OP_MOV*4], eax;
 
 	}
-
 
 next_opcode:
 
@@ -195,23 +175,11 @@ op_jmp:
 op_mov:
 	reg[indexA] = reg[indexB];	
 	goto next_opcode;
-		
 }
 
 int vm_shutDown()
 {
 }
-
-
-
-
-
-
-
-
-
-
-
 
 static void decode(void)
 {
@@ -233,8 +201,7 @@ static void decode(void)
 	else if (opArgs[opType].check == 1)
 		checkType(opType, reg[indexA].type, T_NONE, T_NONE);
 	
-	pc++;
-	                                               
+	pc++;                                              
 }
 
 static int checkType(int opType, Type arg1, Type arg2, Type arg3)
