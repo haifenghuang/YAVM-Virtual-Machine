@@ -1,4 +1,5 @@
 #include <stdlib.h>
+
 #include "vmDebug.h"
 
 const opInfo opArgs[]  = {
@@ -29,3 +30,14 @@ const char * getDebugInfo(int errorCode)
 		return NULL;
 	}
 }
+
+
+
+//double getTime()
+/*{
+    LARGE_INTEGER t, f;
+    QueryPerformanceCounter(&t);
+    QueryPerformanceFrequency(&f);
+    return (double)t.QuadPart/(double)f.QuadPart;
+}*/
+

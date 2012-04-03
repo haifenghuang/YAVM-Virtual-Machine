@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+
 #include "vmDebug.h"
 #include "vm.h"
 
@@ -16,8 +17,8 @@ static int * program;
 
 //registers 
 static Object reg[32] = {
-	{T_NUM, {{10}}},
-	{T_NUM, {{1234}}},
+	{T_NUM, {{12}}},
+	{T_NUM, {{11}}},
 	{T_NUM, {{30}}}
 	};
 
@@ -96,9 +97,7 @@ next_opcode:
 
 	if(opType == (DIE))
 	{
-		printf("dying...\n");
-		system("pause");
-		
+		fprintf(stderr,"dying, ran %d instructions\n", abs(program-pc));
 		return 0;
 	}
 	
@@ -130,13 +129,14 @@ op_mod:
 	goto next_opcode;
 
 op_sqrt:
-	reg[indexA].value.n = sqrt(reg[indexB].value.n);
+	reg[indexA].value.n = sqrt((double)reg[indexB].value.n);
 	goto next_opcode;
-
+	
 op_pow:
-	reg[indexA].value.n = pow(reg[indexB].value.n, reg[indexC].value.n);
+	reg[indexA].value.n = pow((double)reg[indexB].value.n, reg[indexC].value.n);
 	goto next_opcode;
 
+//cmp, lt, and lte are naive implementations of comparision and don't take float/double into accont
 op_cmp:
 	if(&reg[indexA] == &reg[indexB])
 		goto next_opcode;
@@ -146,10 +146,12 @@ op_cmp:
 		switch(reg[indexA].type)
 		{
 		case T_NUM:
-			pc += (abs(reg[indexA].value.n - reg[indexB].value.n) < EPSILON) ? 0 : 1;
+			if(reg[indexA].value.n == reg[indexB].value.n)
+				++pc;
 			break;
 		case T_BLN:
-			pc += (reg[indexA].value.b == reg[indexB].value.b) ? 0 : 1;
+			if(reg[indexA].value.b == reg[indexB].value.b)
+				++pc;
 			break;
 		case T_STR:
 			if(reg[indexA].value.s->length <= 0)
@@ -161,13 +163,13 @@ op_cmp:
 	goto next_opcode;
 
 op_lt:
-	pc += (reg[indexA].value.n < reg[indexB].value.n) && (fabs(reg[indexA].value.n - reg[indexB].value.n) > EPSILON) ? 0 : 1;
+	if(reg[indexA].value.n >= reg[indexB].value.n)
+		++pc;
 	goto next_opcode;
 
 op_lte:
-	if(&reg[indexA] == &reg[indexB])
-		goto next_opcode;
-	pc += (reg[indexA].value.n < reg[indexB].value.n) || (fabs(reg[indexA].value.n - reg[indexB].value.n) < EPSILON) ? 0 : 1;
+	if(reg[indexA].value.n > reg[indexB].value.n)
+		++pc;
 	goto next_opcode;
 
 op_jmp:
@@ -195,7 +197,7 @@ static int checkType(int opType, Type arg1, Type arg2, Type arg3)
 {
 	if(opArgs[opType].arg1 != arg1 || opArgs[opType].arg2 != arg2 || opArgs[opType].arg3 != arg3)
 	{
-		printf("Type Error:\n    %s expected arguments of type %s, %s and %s,\n    got %s and %s instead", opArgs[opType].opName, 
+		fprintf(stderr, "Type Error:\n    %s expected arguments of type %s, %s, %s\n    got %s, %s, %s instead\n", opArgs[opType].opName, 
 			typeStrings[opArgs[opType].arg1], typeStrings[opArgs[opType].arg2], typeStrings[opArgs[opType].arg3],
 			typeStrings[arg1], typeStrings[arg2], typeStrings[arg3]);
 		return -1;

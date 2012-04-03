@@ -14,7 +14,7 @@ const char * typeStrings[];
 
 typedef int Number;
 
-typedef enum {TRUE = 1, FALSE = 0 } Boolean;
+typedef enum {B_TRUE = 1, B_FALSE = 0 } Boolean;
 
 typedef struct {char * string; int length;}String;
 

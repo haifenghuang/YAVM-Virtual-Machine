@@ -13,4 +13,7 @@ typedef struct
 const opInfo opArgs[];
 
 const char * getDebugInfo(int errorCode);
+
+//double getTime();
+
 #endif
