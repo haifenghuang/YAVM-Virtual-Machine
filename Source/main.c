@@ -20,10 +20,14 @@ int program[]  = {
 	DIE
 };
 
+int test[2] = {0, 1};
+
 int main(int argc, char *argv[])
 {
+	int a;
 
-	
-	vm_run(program);
+	test[0] = 1234;
+	a = 1234;
 
+	//vm_run(program);
 }

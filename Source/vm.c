@@ -16,11 +16,7 @@ static int checkType(int opType, int arg1, int arg2, int arg3);
 static int * program;
 
 //registers 
-static Object reg[32] = {
-	{T_NUM, {{12}}},
-	{T_NUM, {{11}}},
-	{T_NUM, {{30}}}
-	};
+static Object reg[1024];
 
 // program counter
 static int * pc;

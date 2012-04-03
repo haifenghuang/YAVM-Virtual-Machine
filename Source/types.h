@@ -18,18 +18,30 @@ typedef enum {B_TRUE = 1, B_FALSE = 0 } Boolean;
 
 typedef struct {char * string; int length;}String;
 
-typedef union 
+typedef struct Function Function;
+typedef struct Object Object;
+typedef union Value Value;
+
+struct Function
+{
+	int * code;
+	Object * k;
+	char sizeK;
+	char sizeLocals;
+};
+
+union Value
 {
 	Number n;
 	String * s;
 	Boolean b;
-}Value;
+};
 
-typedef struct 
+struct Object
 {
 	Type type;
 	Value value;
-}Object;
+};
 
 
 
