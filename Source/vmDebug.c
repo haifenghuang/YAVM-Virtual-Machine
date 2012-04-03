@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "types.h"
 
 #include "vmDebug.h"
 
@@ -31,13 +32,4 @@ const char * getDebugInfo(int errorCode)
 	}
 }
 
-
-
-//double getTime()
-/*{
-    LARGE_INTEGER t, f;
-    QueryPerformanceCounter(&t);
-    QueryPerformanceFrequency(&f);
-    return (double)t.QuadPart/(double)f.QuadPart;
-}*/
 
