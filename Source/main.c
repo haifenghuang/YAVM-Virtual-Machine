@@ -19,12 +19,25 @@ int program[]  = {
 	0x02010002,
 	DIE
 };
+char test[3] = {'a', 'b', 'c'};
 
+unsigned int hashFunction(const char * string, int length, int sz)
+{
+	int i;
+	unsigned short n = 0;
+	unsigned short * iString = (unsigned short*)string;
+
+	for(i = 0; i < length/sizeof(short); i++)
+	{
+		n += iString[i] + i;
+	}
+
+	return n % sz;
+}
 
 int main(int argc, char *argv[])
 {
-	int a = 0, b= 1;
-	if(a == b)
-		a = 5;
+	unsigned int a;
+	a = hashFunction("abcdef", 6, 100);
 	//vm_run(program);
 }

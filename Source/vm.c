@@ -7,10 +7,6 @@
 #include "vm.h"
 #include "types.h"
 
-#define EPSILON 0.000001
-
-
-static void decode(void);
 
 static int checkType(int opType, int arg1, int arg2, int arg3);
 
