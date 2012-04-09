@@ -32,4 +32,3 @@ const char * getDebugInfo(int errorCode)
 	}
 }
 
-
