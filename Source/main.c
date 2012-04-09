@@ -7,10 +7,10 @@
 
 
 int program[]  = {
-	0x00010200, 
-	0x01000200,
-	0x00010009,
-	0x0001020B,
+	0x00010200, //add
+	0x01000200, //add
+	0x00010009, //cmp
+	0x00000A0A, //
 	0x0100020B,
 	0x0201000B,
 	0x00020007,
@@ -21,23 +21,10 @@ int program[]  = {
 };
 char test[3] = {'a', 'b', 'c'};
 
-unsigned int hashFunction(const char * string, int length, int sz)
-{
-	int i;
-	unsigned short n = 0;
-	unsigned short * iString = (unsigned short*)string;
-
-	for(i = 0; i < length/sizeof(short); i++)
-	{
-		n += iString[i] + i;
-	}
-
-	return n % sz;
-}
 
 int main(int argc, char *argv[])
 {
-	unsigned int a;
-	a = hashFunction("abcdef", 6, 100);
+	printProgram(program);
+	return 0;
 	//vm_run(program);
 }

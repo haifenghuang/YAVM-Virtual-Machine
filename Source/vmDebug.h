@@ -14,6 +14,8 @@ const opInfo opArgs[];
 
 const char * getDebugInfo(int errorCode);
 
+int printProgram(int * program);
+
 //double getTime();
 
 #endif
