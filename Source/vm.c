@@ -153,6 +153,9 @@ op_jmp:
 op_mov:
 	reg[indexA] = reg[indexB];	
 	goto next_opcode;
+op_call:
+	goto next_opcode;
+	
 }
 
 static int checkType(int opType, Type arg1, Type arg2, Type arg3) //TODO: possibly make inline
