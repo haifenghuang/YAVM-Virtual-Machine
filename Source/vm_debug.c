@@ -1,13 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "types.h"
+#include "object.h"
 
-#include "vmDebug.h"
+#include "vm_debug.h"
 #include "vm.h"
 
 const opInfo opArgs[]  = {
 	      //indexA  indexB  indexC
+	{"PUSH", T_OBJ, T_NONE, T_NONE, 1},
+	{"PUSHK",T_OBJ, T_NONE, T_NONE, 1},
 	{"ADD", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"SUB", T_NUM,  T_NUM,  T_NUM,  3 },
 	{"MUL", T_NUM,  T_NUM,  T_NUM,  3 },
@@ -20,9 +22,9 @@ const opInfo opArgs[]  = {
 	{"LTE", T_NUM, T_NUM,   T_NONE, 2 }, //jie takes no arguments
 	{"JMP", T_NONE, T_NONE, T_NONE, 4 }, //jmp takes argument D but does not need checking
 	{"MOV", T_OBJ, T_OBJ, T_OBJ, 3 },
-	{"CALL", T_FRAME, T_NONE, T_NONE, 1}
+	{"CALL", T_FUNC, T_NONE, T_NONE, 1},
+	{"RET", T_NONE, T_NONE, T_NONE, 0}
 };
-
 
 const char * getDebugInfo(int errorCode)
 {
@@ -37,10 +39,9 @@ const char * getDebugInfo(int errorCode)
 	}
 }
 
-
 int printProgram(int * program)
 {
-	int opType;
+	OPCODE opType;
 	int indexA;
 	int indexB;
 	int indexC;
@@ -52,12 +53,14 @@ int printProgram(int * program)
 
 next_opcode:
 
-	opType = (OPCODE)(*program & 0x000000FF); // cast just to get visual c++ to shutup
+	opType = GETOP(*program);
+	indexA = GETARG_A(*program);
+	indexB = GETARG_B(*program);
+	indexC = GETARG_C(*program);
+	indexD = GETARG_D(*program);
 
-	indexA = (*program >> 8 ) & 0xFF;
-	indexB = (*program >> 16) & 0xFF;
-	indexC = (*program >> 24) & 0xFF;
-	indexD = (*program >> 8);
+	if(opType == OP_END)
+		return 0;
 
 	opName = opArgs[opType].opName;
 
@@ -67,15 +70,12 @@ next_opcode:
 		printf("%s %d, %d\n", opName, indexA, indexB);
 	else if(opArgs[opType].check == 1)
 		printf("%s %d\n", opName, indexA);
+	else if (opArgs[opType].check == 0)
+		printf("%s", opName);
 	else if(opArgs[opType].check == 4)
 		printf("%s %d\n", opName, indexD);
 	
 	program++;
-
-	if(opType == (DIE))
-	{	
-		return 0;
-	}
 
 	goto next_opcode;
 

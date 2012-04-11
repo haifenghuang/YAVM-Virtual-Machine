@@ -1,7 +1,7 @@
 #ifndef OPCODES_H
 #define OPCODES_H
 
-#include "types.h"
+#include "object.h"
 
 typedef struct
 {

@@ -1,4 +1,4 @@
-#include "types.h"
+#include "object.h"
 
 
 const char * typeStrings[]= {
@@ -6,5 +6,6 @@ const char * typeStrings[]= {
 	"string",
 	"boolean",
 	"object",
+	"function",
 	"none"
 };
