@@ -5,8 +5,6 @@
 	{						                    \
 		__asm mov eax, op_push                  \
 		__asm mov [opTable + OP_PUSH * 4], eax  \
-		__asm mov eax, op_pushk				    \
-		__asm mov [opTable + OP_PUSHK * 4], eax \
 		__asm mov eax, op_add				    \
 		__asm mov [opTable + OP_ADD*4], eax     \
 		__asm mov eax, op_sub				    \

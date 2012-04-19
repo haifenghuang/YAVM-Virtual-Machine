@@ -4,7 +4,9 @@
 #define OP_NUM 16
 
 // encodes A, B and C indexes implicity encodes D 
-#define SETINS(o, a, b, c) (c << 24) | ((b & 0xFF) << 16) | ((a & 0xFF) << 8) | (o & 0xFF) 
+#define SETINSABC(o, a, b, c) (c << 24) | ((b & 0xFF) << 16) | ((a & 0xFF) << 8) | (o & 0xFF) 
+//encodes d
+#define SETINSD(o, d)((d<<8) | (o & 0xFF))
 
 #define SETOP(i, o)(i = i & (o & 0xFF))  
 #define SETARG_A(i, a)(i = i & (a & 0xFF) << 8)
@@ -17,11 +19,12 @@
 #define GETARG_B(i)(i >> 16) & 0xFF
 #define GETARG_C(i)(i >> 24) & 0xFF
 #define GETARG_D(i)(i >> 8 )
-       
+
+#define BIAS(n)(n+8388608)
+
 typedef enum
 {
 	OP_PUSH,
-	OP_PUSHK,
 	OP_ADD,
 	OP_SUB,
 	OP_MUL,

@@ -3,7 +3,6 @@
 #include <math.h>
 #include <string.h>
 
-#include "vm_debug.h"
 #include "vm.h"
 #include "object.h"
 #include "vm_asm.h"
@@ -12,18 +11,10 @@
 #define localB (base+iB)
 #define localC (base+iC)
 
-#define constD (constants + iD)
-
-//baseisters 
-static Object constants[1024] = {
-	{T_NUM, {1234}},
-	{T_NUM, {8765}}
-
-};
 static Object stack[1024]; // stack is not yet dynamic kinda defeats the purpose
 static Object * tos = stack;
 static Object * base = stack;
-static Function * functionTable;//when code is compiled this will be a list of all functions
+static Function functionTable[64];//when code is compiled this will be a list of all functions
 static Function * currentFunction;
 // program counter
 static int * pc;
@@ -33,8 +24,12 @@ static int iA; // index into a register
 static int iB; // index into a local variable
 static int iC; // index into a local variable
 static int iD; // index into global, constant or offset for jmp
+static int siD;
 
 static void * opTable[OP_NUM]; // stores label addresses 
+
+
+
 
 int vm_run(int * program)
 {
@@ -49,13 +44,12 @@ int vm_run(int * program)
 next_opcode:
 
 	//Decode instruction
-	
 	opType = GETOP(*pc);
 	iA = GETARG_A(*pc);
 	iB = GETARG_B(*pc);
 	iC = GETARG_C(*pc);
 	iD = GETARG_D(*pc);
-
+	siD = iD - (8388608);
 	++pc;
 
 	ASM_VM_GOTO(opType);
@@ -63,10 +57,6 @@ next_opcode:
 op_push:
 	++tos;
 	*tos = *localA;
-	goto next_opcode;
-op_pushk:
-	++tos;
-	*tos = *constD;
 	goto next_opcode;
 op_add:
 	valuen(localA) = valuen(localB) + valuen(localC);
@@ -122,25 +112,22 @@ op_lte:
 		++pc;
 	goto next_opcode;
 op_jmp:// can only jump forward
-	pc += iD;
+	pc += siD;
 	goto next_opcode;
 op_mov:
 	*localA = *localB;	
 	goto next_opcode;
 op_call:
-	//push return address
-	++tos;
-	tos->value.ret = (pc + 1);
-	//push base pointer
-	++tos;
-	tos->value.bp = base;
-	++tos;
-		
+	//push return address & base pointer
+	(++tos)->value.ret = pc;
+	(++tos)->value.bp = base;
+	
 	currentFunction = functionTable + iD;
-	pc = functionTable[iD].code;
+	pc = currentFunction->code;
 		
 	base = tos;
-	tos += functionTable[iD].localsSz;
+	tos += currentFunction->localsSz;
+
 	goto next_opcode;
 
 op_ret:
