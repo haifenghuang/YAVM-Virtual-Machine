@@ -2,14 +2,29 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-
 #include "vm.h"
 #include "object.h"
 #include "vm_asm.h"
 
-#define localA (base+iA) // pointer to base[iA]
-#define localB (base+iB)
-#define localC (base+iC)
+
+static void op_push(void);
+static void op_add(void);
+static void op_sub(void);
+static void op_mul(void);
+static void op_div(void);
+static void op_mod(void);
+static void op_sqrt(void);
+static void op_pow(void);
+static void op_cmp(void);
+static void op_lt(void);
+static void op_lte(void);
+static void op_jmp(void);
+static void op_mov(void);
+static void op_call(void);
+static void op_ret(void);
+static void op_end(void);
+
+
 
 static Object stack[1024]; // stack is not yet dynamic kinda defeats the purpose
 static Object * tos = stack;
@@ -26,7 +41,12 @@ static int iC; // index into a local variable
 static int iD; // index into global, constant or offset for jmp
 static int siD;
 
-static void * opTable[OP_NUM]; // stores label addresses 
+
+static opTable[OP_NUM] =
+{
+	&op_mov
+
+}
 
 
 
@@ -38,8 +58,6 @@ int vm_run(int * program)
 
 	pc = program;
 
-	// look in "vm_asm.h"
-	ASM_POPULATE_OPTABLE // macro for assembly code
 
 next_opcode:
 
@@ -52,72 +70,69 @@ next_opcode:
 	siD = iD - (8388608);
 	++pc;
 
-	ASM_VM_GOTO(opType);
-
-op_push:
-	++tos;
-	*tos = *localA;
-	goto next_opcode;
-op_add:
-	valuen(localA) = valuen(localB) + valuen(localC);
-	goto next_opcode;
-op_sub:
-	valuen(localA) = valuen(localB) - valuen(localC);
-	goto next_opcode;
-op_mul:
-	valuen(localA) = valuen(localB) * valuen(localC);
-	goto next_opcode;
-op_div:
-	valuen(localA) = valuen(localB) / valuen(localC); 
-	goto next_opcode;
-op_mod:
-	valuen(localA) = (int)valuen(localB) % (int)valuen(localC); 
-	goto next_opcode;
-op_sqrt:
-	valuen(localA) = sqrt((double)valuen(localB));
-	goto next_opcode;
-op_pow:
-	valuen(localA) = pow((double)valuen(localB), valuen(localC));
-	goto next_opcode;
-//cmp, lt, and lte are naive implementations of comparision and don't take float/double into accont
-op_cmp:
-	if(localA == localB)
-		goto next_opcode;
-	if(type(localA) == type(localB))
+	_asm
 	{
-		switch(type(localA))
-		{
-		case T_NUM:
-			if(valuen(localA) == valuen(localB))
-				++pc;
-			break;
-		case T_BLN:
-			if(valuen(localA) == valuen(localB))
-				++pc;
-			break;
-		case T_STR:
-			if(values(localA)->length <= 0)
-				break;
-			pc += strncmp(values(localA)->string, values(localB)->string, values(localA)->length) ? 0 : 1;
-			break;
-		}
+		mov eax,[opTable + opType * 4];
+		jmp eax;
 	}
-	goto next_opcode;
-op_lt:
-	if(valuen(localA) >= valuen(localB))
+
+
+
+
+	
+}
+
+
+static void op_push(void){
+	*(++tos) = (base)[iA]; 
+}
+static void op_add(void){
+	base[iA].value.n = base[iB].value.n + base[iC].value.n;
+}
+static void op_sub(void){
+	base[iA].value.n = base[iB].value.n - base[iC].value.n;
+}
+static void op_mul(void){
+	base[iA].value.n = base[iB].value.n * base[iC].value.n;
+}
+static void op_div(void){
+	base[iA].value.n = base[iB].value.n / base[iC].value.n;
+}
+static void op_mod(void){
+	base[iA].value.n = base[iB].value.n % base[iC].value.n;
+}
+static void op_sqrt(void){
+	base[iA].value.n = sqrt((double)base[iB].value.n);
+}
+static void op_pow(void){
+	base[iA].value.n = pow((float)base[iB].value.n, base[iC].value.n);
+}
+static void op_cmp(void){
+
+	if((&base[iA] != &base[iB]) && (base[iA].value.n != base[iB].value.n))
+	{
+		if (base[iA].type == base[iB].type == T_STR)
+		{
+			pc += strncmp(base[iA].value.s->string, base[iB].value.s->string, base[iA].value.s->length);//TODO: check this
+		}
+		else pc++;
+	}
+}
+static void op_lt(void){
+	if(base[iA].value.n >= base[iB].value.n)
 		++pc;
-	goto next_opcode;
-op_lte:
-	if(valuen(localA) > valuen(localB))
+}
+static void op_lte(void){
+	if(base[iA].value.n > base[iB].value.n)
 		++pc;
-	goto next_opcode;
-op_jmp:// can only jump forward
+}
+static void op_jmp(void){
 	pc += siD;
-	goto next_opcode;
-op_mov:
-	*localA = *localB;	
-	goto next_opcode;
-op_call:
+}
+static void op_mov(void){
+	base[iA] = base[iB];
+}
+static void op_call(void){// jumps to function and initiates stack frame
 	//push return address & base pointer
 	(++tos)->value.ret = pc;
 	(++tos)->value.bp = base;
@@ -126,20 +141,16 @@ op_call:
 	pc = currentFunction->code;
 		
 	base = tos;
-	tos += currentFunction->localsSz;
-
-	goto next_opcode;
-
-op_ret:
+	tos += currentFunction->localsSz; 
+}
+static void op_ret(void){
 	--tos;
 	pc = tos->value.ret;
 	--tos;
 	base = tos->value.bp;
-	goto next_opcode;
-
-op_end:
-	return 0;
-
+}
+static void op_end(void)
+{
 	
 }
 

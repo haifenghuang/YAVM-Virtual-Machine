@@ -1,7 +1,7 @@
 #ifndef VM_H
 #define VM_H	
 
-#define OP_NUM 16
+#define OP_NUM 15
 
 // encodes A, B and C indexes implicity encodes D 
 #define SETINSABC(o, a, b, c) (c << 24) | ((b & 0xFF) << 16) | ((a & 0xFF) << 8) | (o & 0xFF) 
