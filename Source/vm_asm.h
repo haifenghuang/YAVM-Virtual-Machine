@@ -29,10 +29,6 @@
 		__asm mov [opTable + OP_JMP*4], eax     \
 		__asm mov eax, op_mov				    \
 		__asm mov [opTable + OP_MOV*4], eax     \
-		__asm mov eax, op_call				    \
-		__asm mov [opTable + OP_CALL * 4], eax  \
-		__asm mov eax, op_ret					\
-		__asm mov [opTable + OP_RET * 4], eax   \
 		__asm mov eax, op_end				    \
 		__asm mov [opTable + OP_END*4], eax     \
 	}

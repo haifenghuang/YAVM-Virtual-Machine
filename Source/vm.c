@@ -7,16 +7,7 @@
 #include "object.h"
 #include "vm_asm.h"
 
-#define localA (base+iA) // pointer to base[iA]
-#define localB (base+iB)
-#define localC (base+iC)
-
-static Object stack[1024]; // stack is not yet dynamic kinda defeats the purpose
-static Object * tos = stack;
-static Object * base = stack;
-static Function functionTable[64];//when code is compiled this will be a list of all functions
-static Function * currentFunction;
-// program counter
+static Object memory[1024]; // memory is not yet dynamic, kinda defeats the purpose
 static int * pc;
 
 static OPCODE opType;
@@ -27,9 +18,6 @@ static int iD; // index into global, constant or offset for jmp
 static int siD;
 
 static void * opTable[OP_NUM]; // stores label addresses 
-
-
-
 
 int vm_run(int * program)
 {
@@ -44,99 +32,57 @@ int vm_run(int * program)
 next_opcode:
 
 	//Decode instruction
-	opType = GETOP(*pc);
-	iA = GETARG_A(*pc);
-	iB = GETARG_B(*pc);
-	iC = GETARG_C(*pc);
-	iD = GETARG_D(*pc);
-	siD = iD - (8388608);
 	++pc;
 
 	ASM_VM_GOTO(opType);
 
-op_push:
-	++tos;
-	*tos = *localA;
-	goto next_opcode;
 op_add:
-	valuen(localA) = valuen(localB) + valuen(localC);
+	memory[iA].value.n += memory[iB].value.n;
 	goto next_opcode;
 op_sub:
-	valuen(localA) = valuen(localB) - valuen(localC);
+	memory[iA].value.n -= memory[iB].value.n;
 	goto next_opcode;
 op_mul:
-	valuen(localA) = valuen(localB) * valuen(localC);
+	memory[iA].value.n *= memory[iB].value.n;
 	goto next_opcode;
 op_div:
-	valuen(localA) = valuen(localB) / valuen(localC); 
+	memory[iA].value.n /= memory[iB].value.n;
 	goto next_opcode;
 op_mod:
-	valuen(localA) = (int)valuen(localB) % (int)valuen(localC); 
+	memory[iA].value.n %= memory[iB].value.n;
 	goto next_opcode;
 op_sqrt:
-	valuen(localA) = sqrt((double)valuen(localB));
+	memory[iA].value.n = sqrt((double)memory[iA].value.n);
 	goto next_opcode;
 op_pow:
-	valuen(localA) = pow((double)valuen(localB), valuen(localC));
+	memory[iA].value.n = pow((float)memory[iA].value.n, memory[iB].value.n);
 	goto next_opcode;
 //cmp, lt, and lte are naive implementations of comparision and don't take float/double into accont
 op_cmp:
-	if(localA == localB)
+	if((&memory[iA] == &memory[iB]) || (memory[iA].value.n == memory[iB].value.n))
 		goto next_opcode;
-	if(type(localA) == type(localB))
+	else if (memory[iA].type == T_STR && memory[iB].type == T_STR)
 	{
-		switch(type(localA))
-		{
-		case T_NUM:
-			if(valuen(localA) == valuen(localB))
-				++pc;
-			break;
-		case T_BLN:
-			if(valuen(localA) == valuen(localB))
-				++pc;
-			break;
-		case T_STR:
-			if(values(localA)->length <= 0)
-				break;
-			pc += strncmp(values(localA)->string, values(localB)->string, values(localA)->length) ? 0 : 1;
-			break;
-		}
+		pc += strncmp(memory[iA].value.s->string, memory[iB].value.s->string, memory[iA].value.s->length);
 	}
+	else pc++;
+
 	goto next_opcode;
+
 op_lt:
-	if(valuen(localA) >= valuen(localB))
+	if(memory[iA].value.n >= memory[iA].value.n)
 		++pc;
 	goto next_opcode;
 op_lte:
-	if(valuen(localA) > valuen(localB))
+	if(memory[iA].value.n > memory[iA].value.n)
 		++pc;
 	goto next_opcode;
-op_jmp:// can only jump forward
+op_jmp:
 	pc += siD;
 	goto next_opcode;
 op_mov:
-	*localA = *localB;	
+	memory[iA] = memory[iB];
 	goto next_opcode;
-op_call:
-	//push return address & base pointer
-	(++tos)->value.ret = pc;
-	(++tos)->value.bp = base;
-	
-	currentFunction = functionTable + iD;
-	pc = currentFunction->code;
-		
-	base = tos;
-	tos += currentFunction->localsSz;
-
-	goto next_opcode;
-
-op_ret:
-	--tos;
-	pc = tos->value.ret;
-	--tos;
-	base = tos->value.bp;
-	goto next_opcode;
-
 op_end:
 	return 0;
 

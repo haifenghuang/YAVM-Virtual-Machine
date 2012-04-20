@@ -3,8 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "vm.h"
-int program[]  = {
-	SETINSABC(OP_END,   0, 0, 0)
+int program[]  = {0
 };
 
 
