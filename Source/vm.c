@@ -3,154 +3,123 @@
 #include <math.h>
 #include <string.h>
 #include "vm.h"
-#include "object.h"
-#include "vm_asm.h"
 
 
-static void op_push(void);
-static void op_add(void);
-static void op_sub(void);
-static void op_mul(void);
-static void op_div(void);
-static void op_mod(void);
-static void op_sqrt(void);
-static void op_pow(void);
-static void op_cmp(void);
-static void op_lt(void);
-static void op_lte(void);
-static void op_jmp(void);
-static void op_mov(void);
-static void op_call(void);
-static void op_ret(void);
-static void op_end(void);
+static int globals[1024] = {1, 2, 1234, 4, 5, 0};
+static int stack[1024]; // stack is not yet dynamic kinda defeats the purpose
+static int * tos = stack;
+static int * bp = stack;
+static float * fbp;
 
-
-
-static Object stack[1024]; // stack is not yet dynamic kinda defeats the purpose
-static Object * tos = stack;
-static Object * base = stack;
-static Function functionTable[64];//when code is compiled this will be a list of all functions
-static Function * currentFunction;
-// program counter
 static int * pc;
 
-static OPCODE opType;
-static int iA; // index into a register
-static int iB; // index into a local variable
-static int iC; // index into a local variable
-static int iD; // index into global, constant or offset for jmp
-static int siD;
+#define SIGN24 0x00800000 // (2 ^ 24)/2
+#define SIGN16 0x00008000 // (2 ^ 16)/2
 
+#define OP ((instruction) & 0xFF)			//opcode
+#define RA bp[((instruction >> 8 ) & 0xFF)] //tos[rA] 
+#define RB bp[((instruction >> 16) & 0xFF)] //tos[rB]
+#define RC bp[((instruction >> 24) & 0xFF)] //tos[rC]
 
-static opTable[OP_NUM] =
+#define FRA fbp[((instruction >> 8 ) & 0xFF)]
+#define FRB fbp[((instruction >> 16) & 0xFF)] //tos[rB]
+#define FRC fbp[((instruction >> 24) & 0xFF)] //tos[rC]
+
+#define IMM16   (instruction >> 16) & 0xFFFF
+#define SIMM16 ((instruction >> 16) & 0xFFFF) - SIGN16
+#define IMM24   (instruction >> 8) & 0xFFFFFF
+#define SIMM24 ((instruction >> 8) & 0xFFFFFF) - SIGN24
+
+#define G(i)globals[i]
+
+int YAVM_run(int * program)
 {
-	&op_mov
+	
+	int instruction = SIGN24;
 
-}
-
-
-
-
-int vm_run(int * program)
-{
 	if(program == NULL)
-		return 2;
-
+		return -1;
 	pc = program;
-
 
 next_opcode:
 
-	//Decode instruction
-	opType = GETOP(*pc);
-	iA = GETARG_A(*pc);
-	iB = GETARG_B(*pc);
-	iC = GETARG_C(*pc);
-	iD = GETARG_D(*pc);
-	siD = iD - (8388608);
+	instruction = *pc;
+	fbp = (float*)bp;
 	++pc;
 
-	_asm
+	switch(OP)
 	{
-		mov eax,[opTable + opType * 4];
-		jmp eax;
+		case ADD:
+			RA = RB + RC;
+			break;
+		case SUB:
+			RA = RB - RC;
+			break;
+		case MUL:
+			RA = RB * RC;
+			break;
+		case DIV:
+			RA = RB / RC;
+			break;
+		case MOD:
+			RA = RB % RC;
+			break;
+		case SQRT:
+			RA = (int)sqrt((float)RB);
+			break;
+		case EXP:
+			RA = (int)pow((float)RB, RC);
+			break;
+		case FADD:
+			FRA = FRB + FRC;
+			break;
+		case FSUB:
+			FRA = FRB - FRC;
+			break;
+		case FMUL:
+			FRA = FRB * FRC;
+			break;
+		case FDIV:
+			FRA = FRB / FRC;
+			break;
+		case FMOD:
+			FRA = fmod(FRB, FRC);
+			break;
+		case FSQRT:
+			FRA = sqrt(FRB);
+			break;
+		case FEXP:
+			FRA = pow(FRB, FRC);
+			break;
+		case MOV:
+			RA = RB;
+			break;
+		case LOADG:
+			RA = G(IMM16);
+			break;
+		case SETG:
+			G(IMM16) = RA;
+			break;
+		case CMP:
+			RA = (RB == RC);
+			break;
+		case GT:
+			RA = (RB > RC);
+			break;
+		case GTE:
+			RA = (RB >= RC);
+			break;
+		case JE:
+			pc += RA ? SIMM16 : 0;
+			break;
+		case JMP:
+			pc += SIMM24;
+			break;
+		case END:
+			return 0;
 	}
 
-
-
-
-	
+	goto next_opcode;
 }
 
-
-static void op_push(void){
-	*(++tos) = (base)[iA]; 
-}
-static void op_add(void){
-	base[iA].value.n = base[iB].value.n + base[iC].value.n;
-}
-static void op_sub(void){
-	base[iA].value.n = base[iB].value.n - base[iC].value.n;
-}
-static void op_mul(void){
-	base[iA].value.n = base[iB].value.n * base[iC].value.n;
-}
-static void op_div(void){
-	base[iA].value.n = base[iB].value.n / base[iC].value.n;
-}
-static void op_mod(void){
-	base[iA].value.n = base[iB].value.n % base[iC].value.n;
-}
-static void op_sqrt(void){
-	base[iA].value.n = sqrt((double)base[iB].value.n);
-}
-static void op_pow(void){
-	base[iA].value.n = pow((float)base[iB].value.n, base[iC].value.n);
-}
-static void op_cmp(void){
-
-	if((&base[iA] != &base[iB]) && (base[iA].value.n != base[iB].value.n))
-	{
-		if (base[iA].type == base[iB].type == T_STR)
-		{
-			pc += strncmp(base[iA].value.s->string, base[iB].value.s->string, base[iA].value.s->length);//TODO: check this
-		}
-		else pc++;
-	}
-}
-static void op_lt(void){
-	if(base[iA].value.n >= base[iB].value.n)
-		++pc;
-}
-static void op_lte(void){
-	if(base[iA].value.n > base[iB].value.n)
-		++pc;
-}
-static void op_jmp(void){
-	pc += siD;
-}
-static void op_mov(void){
-	base[iA] = base[iB];
-}
-static void op_call(void){// jumps to function and initiates stack frame
-	//push return address & base pointer
-	(++tos)->value.ret = pc;
-	(++tos)->value.bp = base;
-	
-	currentFunction = functionTable + iD;
-	pc = currentFunction->code;
-		
-	base = tos;
-	tos += currentFunction->localsSz; 
-}
-static void op_ret(void){
-	--tos;
-	pc = tos->value.ret;
-	--tos;
-	base = tos->value.bp;
-}
-static void op_end(void)
-{
-	
-}
 

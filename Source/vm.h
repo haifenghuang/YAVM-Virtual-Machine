@@ -1,51 +1,52 @@
 #ifndef VM_H
 #define VM_H	
 
-#define OP_NUM 15
+//Math
+#define ADD		0
+#define SUB		2
+#define MUL		3
+#define DIV		4
+#define MOD		5
+#define SQRT	6
+#define EXP		7
+//Float Math
+#define FADD	8
+#define FSUB	9
+#define FMUL	10
+#define FDIV	11
+#define FMOD	12
+#define FSQRT	13
+#define FEXP	14
+//Memory Operations
+#define MOV		15
+#define LOADG   16
+#define SETG	17
+//Assignment Comparisons
+#define CMP     18
+#define GT      19
+#define GTE		20
+//Jump on variable
+#define JE      21
+#define JMP		22
+#define END     255
+/*
+typedef struct YAVM_Method YAVM_Method;
+typedef struct YAVM_State YAVM_State;
 
-// encodes A, B and C indexes implicity encodes D 
-#define SETINSABC(o, a, b, c) (c << 24) | ((b & 0xFF) << 16) | ((a & 0xFF) << 8) | (o & 0xFF) 
-//encodes d
-#define SETINSD(o, d)((d<<8) | (o & 0xFF))
-
-#define SETOP(i, o)(i = i & (o & 0xFF))  
-#define SETARG_A(i, a)(i = i & (a & 0xFF) << 8)
-#define SETARG_B(i, b)(i = i & (b & 0xFF) << 16)
-#define SETARG_C(i, c)(i = i & (c & 0xFF) << 24)
-#define SETARG_D(i, d)(i = i & (d << 8 ))
-
-#define GETOP(i)(i) & 0xFF
-#define GETARG_A(i)(i >> 8 ) & 0xFF
-#define GETARG_B(i)(i >> 16) & 0xFF
-#define GETARG_C(i)(i >> 24) & 0xFF
-#define GETARG_D(i)(i >> 8 )
-
-#define BIAS(n)(n+8388608)
-
-typedef enum
+struct YAVM_Method
 {
-	OP_PUSH,
-	OP_ADD,
-	OP_SUB,
-	OP_MUL,
-	OP_DIV,
-	OP_MOD,
-	OP_SQRT,
-	OP_POW,
-	OP_CMP,
-	OP_LT,
-	OP_LTE,
-	OP_JMP,
-	OP_MOV,
-	OP_CALL,
-	OP_RET,
-	OP_END // shutdown virtual machine
-}OPCODE;
+	int argSize;
+	int localsSize;
+	int * code;
+};
 
 
-int vm_run(int * program);
-
-
-
+struct YAVM_State
+{
+	int * code;
+	YAVM_Method * methods;
+};
+*/
+int YAVM_run(int * code);
 
 #endif
