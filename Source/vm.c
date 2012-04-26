@@ -4,40 +4,46 @@
 #include <string.h>
 #include "vm.h"
 
+typedef struct
+{
+	int * bp; //AKA locals, bp[0] points to argument 1
+	int * pc; //address of old code
+	int * sp; //current top of the stack
+	int retRegister;// index into previous bp to store return value in
+}Frame;
+
 #define MAX_STACK 1024
 #define MAX_METHODS 64
 
 static YAVM_Method methods[MAX_METHODS];
-static int globals[1024] = {1, 1, 1234, 4, 5, 0};
-static int stack[MAX_STACK]= {0, 0}; // used for locals and args
+static int globals[1024];
+static int stack[MAX_STACK]= {10}; // used for locals and args
 
-static int * sp = stack;
-static int * bp = stack+1;
 static float * fbp;
 
-static int cstack[MAX_STACK];// used for bp, sp, and pc
-static int * csp = cstack; 
+Frame currentFrame;
+static Frame callStack[MAX_STACK];// *call* stack used for function calling/returning
+static Frame * csp = callStack; 
 
-static int * pc;
+int retValue; 
 
 #define SIGN24 0x00800000 // (2 ^ 24)/2
 #define SIGN16 0x00008000 // (2 ^ 16)/2
 
 #define OP ((instruction) & 0xFF)			//opcode
-#define RA bp[((instruction >> 8 ) & 0xFF)] //tos[rA] 
-#define RB bp[((instruction >> 16) & 0xFF)] //tos[rB]
-#define RC bp[((instruction >> 24) & 0xFF)] //tos[rC]
+#define RA currentFrame.bp[((instruction >> 8 ) & 0xFF)] //tos[rA] 
+#define RB currentFrame.bp[((instruction >> 16) & 0xFF)] //tos[rB]
+#define RC currentFrame.bp[((instruction >> 24) & 0xFF)] //tos[rC]
 
 #define FRA fbp[((instruction >> 8 ) & 0xFF)]
 #define FRB fbp[((instruction >> 16) & 0xFF)] //tos[rB]
 #define FRC fbp[((instruction >> 24) & 0xFF)] //tos[rC]
 
+#define IMM8    (instruction >> 8) & 0xFF
 #define IMM16   (instruction >> 16) & 0xFFFF
 #define SIMM16 ((instruction >> 16) & 0xFFFF) - SIGN16
 #define IMM24   (instruction >> 8) & 0xFFFFFF
 #define SIMM24 ((instruction >> 8) & 0xFFFFFF) - SIGN24
-
-#define G(i)globals[i]
 
 int YAVM_setMethod(YAVM_Method method, int index)
 {
@@ -52,12 +58,17 @@ int YAVM_run(int * program)
 	int instruction = SIGN24;
 	if(program == NULL)
 		return -1;
-	pc = program;
+
+	currentFrame.pc = program;
+	currentFrame.sp = stack;
+	currentFrame.bp = stack;
+	
 
 next_opcode:
-	instruction = *pc;
-	fbp = (float*)bp;
-	++pc;
+	instruction = *currentFrame.pc;
+	fbp = (float*)currentFrame.bp;
+
+	++currentFrame.pc;
 
 	switch(OP){
 	case ADD:
@@ -103,19 +114,19 @@ next_opcode:
 		FRA = pow(FRB, FRC);
 		break;
 	case PUSH:
-		*(++sp) = RA;
+		*(++currentFrame.sp) = RA;
 		break;
 	case POP:
-		RA = *(sp--);
+		RA = *(currentFrame.sp--);
 		break;
 	case MOV:
 		RA = RB;
 		break;
 	case LOADG:
-		RA = G(IMM16);
+		RA = globals[IMM16];
 		break;
 	case SETG:
-		G(IMM16) = RA;
+		globals[IMM16] = RA;
 		break;
 	case CMP:
 		RA = (RB == RC);
@@ -127,27 +138,28 @@ next_opcode:
 		RA = (RB >= RC);
 		break;
 	case JE:
-		pc += RA ? SIMM16 : 0;
+		currentFrame.pc += RA ? SIMM16 : 0;
 		break;
 	case JMP:
-		pc += SIMM24;
+		currentFrame.pc += SIMM24;
 		break;
 	case CALL:
+		*(++csp) = currentFrame; // save current frame
 
-		*(++csp) = (int)pc;
-		*(++csp) = (int)bp;
-		*(++csp) = (int)sp;
+		currentFrame.retRegister = IMM8;
 
-		bp = sp - methods[IMM24].argSize + 1; 
-		sp += methods[IMM24].localsSize;//TODO check ofr stack overflow
-		pc = methods[IMM24].code;
+		 /*set the new base pointer to consume the top argSize items + 1 
+			turning them into locals */
+		currentFrame.bp = currentFrame.sp - methods[IMM16].argSize + 1;
 
+		currentFrame.sp += methods[IMM16].localsSize;//TODO check ofr stack overflow
+		currentFrame.pc = methods[IMM16].code;
 		break;
 
 	case RET:
-		sp = (int*)*(csp--);
-		bp = (int*)*(csp--);
-		pc = (int*)*(csp--);
+		retValue = RA;
+		currentFrame = *(csp--); //restore previous frame
+		currentFrame.bp[currentFrame.retRegister] = retValue;
 		break;
 
 	case END:
@@ -157,3 +169,5 @@ next_opcode:
 }
 
 
+// method's arguments consume the top n positions of the stack where n are the # of args
+// when a method is called a value is pushed always as the first argument that points 
