@@ -32,6 +32,7 @@
 #define JMP		24
 #define CALL    25
 #define RET     26
+#define LOADRET 27
 #define END     255
 
 typedef struct YAVM_Method YAVM_Method;

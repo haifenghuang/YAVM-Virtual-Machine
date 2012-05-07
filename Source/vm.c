@@ -9,7 +9,6 @@ typedef struct
 	int * bp; //AKA locals, bp[0] points to argument 1
 	int * pc; //address of old code
 	int * sp; //current top of the stack
-	int retRegister;// index into previous bp to store return value in
 }Frame;
 
 #define MAX_STACK 1024
@@ -146,8 +145,6 @@ next_opcode:
 	case CALL:
 		*(++csp) = currentFrame; // save current frame
 
-		currentFrame.retRegister = IMM8;
-
 		 /*set the new base pointer to consume the top argSize items + 1 
 			turning them into locals */
 		currentFrame.bp = currentFrame.sp - methods[IMM16].argSize + 1;
@@ -157,11 +154,11 @@ next_opcode:
 		break;
 
 	case RET:
-		retValue = RA;
+		retValue = RA; //store the return value of this function in retvalue, TODO: possibly make a SETRET too.
 		currentFrame = *(csp--); //restore previous frame
-		currentFrame.bp[currentFrame.retRegister] = retValue;
 		break;
-
+	case LOADRET:
+		RA = retValue; // load the return value of last called function into RA
 	case END:
 		return 0;
 	}
