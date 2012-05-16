@@ -16,7 +16,7 @@ typedef struct
 
 static YAVM_Method methods[MAX_METHODS];
 static int globals[1024];
-static int stack[MAX_STACK]= {10}; // used for locals and args
+static int stack[MAX_STACK] = {15}; // used for locals and args
 
 static float * fbp;
 
@@ -26,8 +26,8 @@ static Frame * csp = callStack;
 
 int retValue; 
 
-#define SIGN24 0x00800000 // (2 ^ 24)/2
-#define SIGN16 0x00008000 // (2 ^ 16)/2
+#define SIGN24 0x800000 // (2 ^ 24)/2
+#define SIGN16 0x8000 // (2 ^ 16)/2
 
 #define OP ((instruction) & 0xFF)			//opcode
 #define RA currentFrame.bp[((instruction >> 8 ) & 0xFF)] //tos[rA] 
@@ -38,11 +38,20 @@ int retValue;
 #define FRB fbp[((instruction >> 16) & 0xFF)] //tos[rB]
 #define FRC fbp[((instruction >> 24) & 0xFF)] //tos[rC]
 
-#define IMM8    (instruction >> 8) & 0xFF
-#define IMM16   (instruction >> 16) & 0xFFFF
-#define SIMM16 ((instruction >> 16) & 0xFFFF) - SIGN16
-#define IMM24   (instruction >> 8) & 0xFFFFFF
-#define SIMM24 ((instruction >> 8) & 0xFFFFFF) - SIGN24
+#define IMM8    ((instruction >> 8) & 0xFF)
+#define IMM16   ((instruction >> 16) & 0xFFFF)
+#define SIMM16 (((instruction >> 16) & 0xFFFF) - SIGN16)
+#define IMM24   ((instruction >> 8) & 0xFFFFFF)
+#define SIMM24 (((instruction >> 8) & 0xFFFFFF) - SIGN24)
+
+
+int YAVM_init(void)
+{
+	
+	currentFrame.sp = stack;
+	currentFrame.bp = stack;
+	
+}
 
 int YAVM_setMethod(YAVM_Method method, int index)
 {
@@ -54,16 +63,15 @@ int YAVM_setMethod(YAVM_Method method, int index)
 
 int YAVM_run(int * program)
 {
-	int instruction = SIGN24;
+	int numofinst = 0;
+	int instruction;
 	if(program == NULL)
 		return -1;
 
 	currentFrame.pc = program;
-	currentFrame.sp = stack;
-	currentFrame.bp = stack;
-	
 
 next_opcode:
+	numofinst ++;
 	instruction = *currentFrame.pc;
 	fbp = (float*)currentFrame.bp;
 
@@ -90,6 +98,27 @@ next_opcode:
 		break;
 	case EXP:
 		RA = (int)pow((float)RB, RC);
+		break;
+	case ADDIMM:
+		RA += IMM16;
+		break;
+	case SUBIMM:
+		RA -= IMM16;
+		break;
+	case MULIMM:
+		RA *= IMM16;
+		break;
+	case DIVIMM:
+		RA /= IMM16;
+		break;
+	case MODIMM:
+		RA %= IMM16;
+		break;
+	case SQRTIMM:
+		RA = (int)sqrt((float)IMM16);
+		break;
+	case EXPIMM:
+		RA = (int)pow((float)RA, IMM16);
 		break;
 	case FADD:
 		FRA = FRB + FRC;
@@ -127,14 +156,17 @@ next_opcode:
 	case SETG:
 		globals[IMM16] = RA;
 		break;
+	case MOVIMM16:
+		RA = IMM16;
+		break;
 	case CMP:
-		RA = (RB == RC);
+		currentFrame.pc += (RA == RB);
 		break;
 	case GT:
-		RA = (RB > RC);
+		currentFrame.pc += (RA > RB) ? 1: 0;
 		break;
 	case GTE:
-		RA = (RB >= RC);
+		currentFrame.pc += (RA >= RB) ? 1: 0;
 		break;
 	case JE:
 		currentFrame.pc += RA ? SIMM16 : 0;
@@ -144,12 +176,14 @@ next_opcode:
 		break;
 	case CALL:
 		*(++csp) = currentFrame; // save current frame
-
+		csp->sp-=methods[IMM16].argSize;
+		//instead of removing pushed arguments via pop or subbing the 
+		//stack pointer remove them here
 		 /*set the new base pointer to consume the top argSize items + 1 
 			turning them into locals */
-		currentFrame.bp = currentFrame.sp - methods[IMM16].argSize + 1;
+		currentFrame.bp = (currentFrame.sp - methods[IMM16].argSize)+1;
 
-		currentFrame.sp += methods[IMM16].localsSize;//TODO check ofr stack overflow
+		currentFrame.sp += methods[IMM16].localsSize;//TODO check for stack overflow
 		currentFrame.pc = methods[IMM16].code;
 		break;
 
@@ -159,12 +193,25 @@ next_opcode:
 		break;
 	case LOADRET:
 		RA = retValue; // load the return value of last called function into RA
+	
+	case PRINT:
+		printf("%d \n",RA);
+		break;
 	case END:
-		return 0;
+		return numofinst;
 	}
 	goto next_opcode;
 }
 
+int YAVM_setStack(int index, int value)
+{
+	
+	if(index>MAX_STACK)
+		return -1;
+	stack[index] = value;
+	return 0;
+
+}
 
 // method's arguments consume the top n positions of the stack where n are the # of args
 // when a method is called a value is pushed always as the first argument that points 

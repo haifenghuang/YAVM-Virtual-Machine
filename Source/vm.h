@@ -9,6 +9,14 @@
 #define MOD		5
 #define SQRT	6
 #define EXP		7
+//Math IMM
+#define ADDIMM	29
+#define SUBIMM	30
+#define MULIMM	31
+#define DIVIMM	32
+#define MODIMM	33
+#define SQRTIMM 34
+#define EXPIMM	35
 //Float Math
 #define FADD	8
 #define FSUB	9
@@ -23,6 +31,7 @@
 #define MOV		17
 #define LOADG   18
 #define SETG	19
+#define MOVIMM16 28
 //Assignment Comparisons
 #define CMP     20
 #define GT      21
@@ -33,6 +42,8 @@
 #define CALL    25
 #define RET     26
 #define LOADRET 27
+
+#define PRINT   36
 #define END     255
 
 typedef struct YAVM_Method YAVM_Method;
@@ -56,7 +67,8 @@ struct YAVM_State
 	YAVM_Method * methods;
 };
 */
+int YAVM_init(void);
 int YAVM_run(int * code);
 int YAVM_setMethod(YAVM_Method method, int index);
-
+int YAVM_setStack(int index, int value);
 #endif
